@@ -14,19 +14,11 @@ fn get_mcv(remaining: &Vec<Vec<u32>>, inv: bool) -> Vec<u32> {
         })
         .iter()
         .map(|ones| {
-            let zeros = remaining.len() as u32 - ones;
+            let zeros = &(remaining.len() as u32 - ones);
             if !inv {
-                if ones >= &zeros {
-                    return 1;
-                } else {
-                    return 0;
-                }
+                (ones >= zeros) as u32
             } else {
-                if &zeros <= ones {
-                    return 0;
-                } else {
-                    return 1;
-                }
+                (zeros > ones) as u32
             }
         })
         .collect();
@@ -48,7 +40,7 @@ fn get_rating(arr: &Vec<Vec<u32>>, inv: bool) -> Vec<u32> {
 }
 
 fn main() {
-    let contents = fs::read_to_string("data/day3.txt").unwrap();
+    let contents = fs::read_to_string("data/day3_test.txt").unwrap();
     let v: Vec<_> = contents.split("\n").collect();
     let arr: Vec<Vec<_>> = v
         .iter()
@@ -56,8 +48,11 @@ fn main() {
         .filter(|v: &Vec<_>| v.len() > 0)
         .collect();
 
-    // println!("{:?}",
-    let ox = get_rating(&arr, false).iter().fold(0, |acc, b| acc * 2 + b);
-    let co2 = get_rating(&arr, true).iter().fold(0, |acc, b| acc * 2 + b);
+    let ox = get_rating(&arr, false)
+        .iter()
+        .fold(0, |acc, b| (acc << 1) + b);
+    let co2 = get_rating(&arr, true)
+        .iter()
+        .fold(0, |acc, b| (acc << 1) + b);
     println!("{}", ox * co2)
 }
