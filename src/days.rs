@@ -111,3 +111,54 @@ pub fn day_3(path: &str) {
         .fold(0, |acc, b| (acc << 1) + b);
     println!("day 3: {}", ox * co2)
 }
+
+pub day_4() {
+    let ticket_dim = 5;
+    let mut row_counts = HashMap::new();
+    let mut col_counts = HashMap::new();
+    let mut number_to_ticket = HashMap::new();
+    let mut sums = Vec::new();
+    let mut winners = Vec::new();
+    let mut winner_record = HashSet::new();
+    let (nums, arr) = read_input("data/day4.txt").unwrap();
+    for (i, chunk) in arr.chunks(ticket_dim).enumerate() {
+        let mut sum = 0;
+        for (r, row) in chunk.iter().enumerate() {
+            for (c, val) in row.iter().enumerate() {
+                let mut v = number_to_ticket.get(val).cloned().unwrap_or(Vec::new());
+                v.push((i, r, c));
+                number_to_ticket.insert(val, v);
+                row_counts.insert((i, r), 0);
+                col_counts.insert((i, c), 0);
+                sum += val;
+            }
+        }
+        sums.push(sum);
+    }
+    for num in nums {
+        let locs = number_to_ticket.get(&num).cloned().unwrap_or(Vec::new());
+        for loc in locs {
+            sums[loc.0] -= num;
+            let row_count = row_counts.get(&(loc.0, loc.1)).unwrap();
+            let col_count = col_counts.get(&(loc.0, loc.2)).unwrap();
+            let new_r_count = row_count + 1;
+            let new_c_count = col_count + 1;
+            row_counts.insert((loc.0, loc.1), new_r_count);
+            col_counts.insert((loc.0, loc.2), new_c_count);
+            if new_r_count == ticket_dim || new_c_count == ticket_dim {
+                let total = sums[loc.0] * num;
+                if !winner_record.contains(&loc.0) {
+                    winners.push((loc.0, total));
+                    winner_record.insert(loc.0);
+                }
+            }
+        }
+    }
+    for (key, value) in number_to_ticket {
+        if value.len() == 0 {
+            println!("{:?}", key);
+        }
+    }
+    println!("{:?}", winners[0]);
+    println!("{:?}", winners.last().unwrap());
+}

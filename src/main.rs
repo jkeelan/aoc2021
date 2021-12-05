@@ -6,69 +6,61 @@ use std::io;
 use std::io::BufRead;
 use std::io::BufReader;
 // mod days;
-fn read_input(filename: &str) -> io::Result<(Vec<i32>, Vec<Vec<i32>>)> {
-    let file_in = fs::File::open(filename)?;
-    let mut file_reader = BufReader::new(file_in);
-    let mut line_buf = String::new();
-    let _res = file_reader.read_line(&mut line_buf);
-    let nums: Vec<i32> = line_buf
-        .split(",")
-        .into_iter()
-        .flat_map(|v| v.parse::<i32>())
-        .collect();
-    let arr: Vec<Vec<i32>> = file_reader
+
+fn main() {
+    let file_in = fs::File::open("data/day5.txt").unwrap();
+    let file_reader = BufReader::new(file_in);
+    let res: Vec<Vec<i32>> = file_reader
         .lines()
         .map(|l| {
             l.unwrap()
-                .split(char::is_whitespace)
-                .flat_map(|number| number.parse::<i32>())
+                .split(" -> ")
+                .map(|v| {
+                    v.split(",")
+                        .flat_map(|v| v.parse::<i32>())
+                        .collect::<Vec<i32>>()
+                })
+                .flatten()
                 .collect()
         })
         .collect();
-    return Ok((nums, arr.into_iter().filter(|v| v.len() > 0).collect()));
-}
-fn main() {
-    let ticket_dim = 5;
-    let mut row_counts = HashMap::new();
-    let mut col_counts = HashMap::new();
-    let mut number_to_ticket = HashMap::new();
-    let mut sums = Vec::new();
-    let (nums, arr) = read_input("data/day4.txt").unwrap();
-    for (i, chunk) in arr.chunks(ticket_dim).enumerate() {
-        let mut sum = 0;
-        for (r, row) in chunk.iter().enumerate() {
-            for (c, val) in row.iter().enumerate() {
-                let mut v = number_to_ticket.get(val).cloned().unwrap_or(Vec::new());
-                v.push((i, r, c));
-                number_to_ticket.insert(val, v);
-                row_counts.insert((i, r), 0);
-                col_counts.insert((i, c), 0);
-                sum += val;
-            }
-        }
-        sums.push(sum);
-    }
-    let mut winners = Vec::new();
-    let mut winner_record = HashSet::new();
-    for num in nums {
-        let locs = number_to_ticket.get(&num).cloned().unwrap_or(Vec::new());
-        for loc in locs {
-            sums[loc.0] -= num;
-            let row_count = row_counts.get(&(loc.0, loc.1)).unwrap();
-            let col_count = col_counts.get(&(loc.0, loc.2)).unwrap();
-            let new_r_count = row_count + 1;
-            let new_c_count = col_count + 1;
-            row_counts.insert((loc.0, loc.1), new_r_count);
-            col_counts.insert((loc.0, loc.2), new_c_count);
-            if new_r_count == ticket_dim || new_c_count == ticket_dim {
-                let total = sums[loc.0] * num;
-                if !winner_record.contains(&loc.0) {
-                    winners.push((loc.0, total));
-                    winner_record.insert(loc.0);
+    let mut counts = HashMap::new();
+    let _test = res
+        .iter()
+        .map(|v| {
+            let (x1, y1, x2, y2) = (v[0], v[1], v[2], v[3]);
+            if x1 == x2 {
+                let sy = if y1 >= y2 { y2 } else { y1 };
+                let ey = if y1 >= y2 { y1 } else { y2 };
+                for y in sy..=ey {
+                    let count = counts.get(&(x1, y)).cloned().unwrap_or(0);
+                    counts.insert((x1, y), count + 1);
+                }
+            } else if y1 == y2 {
+                let sx = if x1 >= x2 { x2 } else { x1 };
+                let ex = if x1 >= x2 { x1 } else { x2 };
+                for x in sx..=ex {
+                    let count = counts.get(&(x, y1)).cloned().unwrap_or(0);
+                    counts.insert((x, y1), count + 1);
+                }
+            } else {
+                let xdir = if x1 > x2 { -1 } else { 1 };
+                let ydir = if y1 > y2 { -1 } else { 1 };
+                let (mut x, mut y) = (x1, y1);
+                for _ in x1 * xdir..=x2 * xdir {
+                    let count = counts.get(&(x, y)).cloned().unwrap_or(0);
+                    counts.insert((x, y), count + 1);
+                    x += xdir;
+                    y += ydir;
                 }
             }
+        })
+        .collect::<()>();
+    let mut cross_count = 0;
+    for (key, value) in counts {
+        if value >= 2 {
+            cross_count += 1;
         }
     }
-    println!("{:?}", winners[0]);
-    println!("{:?}", winners.last().unwrap());
+    println!("{:?}", cross_count)
 }
