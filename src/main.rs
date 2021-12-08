@@ -68,49 +68,27 @@ fn main() {
     for (line, res) in contents {
         let lens: Vec<i32> = line.iter().map(|v| v.len() as i32).collect();
         let mut line_map = HashMap::new();
-        let mut found = Vec::new();
         for i in 0..lens.len() {
             match lens[i] {
-                2 => {
-                    line_map.insert(1, line[i]);
-                    found.push(i);
-                }
-                3 => {
-                    line_map.insert(7, line[i]);
-                    found.push(i);
-                }
-                4 => {
-                    line_map.insert(4, line[i]);
-                    found.push(i);
-                }
-                7 => {
-                    line_map.insert(8, line[i]);
-                    found.push(i);
-                }
-                _ => {}
-            }
+                2 => line_map.insert(1, line[i]),
+                3 => line_map.insert(7, line[i]),
+                4 => line_map.insert(4, line[i]),
+                7 => line_map.insert(8, line[i]),
+                _ => Some("lol"),
+            };
         }
         // calculate signatures for the remaining numbers
-        let mut these_sigs = HashMap::new();
         for i in 0..line.len() {
-            if found.contains(&i) {
-                continue;
-            }
             let mut temp = HashSet::new();
             // iterate over 1, 4, 7, 8
-            for (k, v) in &line_map {
+            for k in [1, 4, 7, 8] {
                 // Calculate signature as the number of overlapping characters
-                temp.insert(share_char(v, line[i]).len() as i32);
+                let other = line_map.get(&k).unwrap();
+                temp.insert(share_char(other, line[i]).len() as i32);
             }
-            these_sigs.insert(i, temp);
-        }
-
-        // Compare the signatures with the baseline, and add.
-        for (i, sig) in &these_sigs {
             for (j, main_sig) in &signatures {
-                if sig == main_sig {
-                    line_map.insert(*j, line[*i]);
-                    found.push(*i);
+                if &temp == main_sig {
+                    line_map.insert(*j, line[i]);
                 }
             }
         }
