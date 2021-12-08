@@ -112,7 +112,29 @@ pub fn day_3(path: &str) {
     println!("day 3: {}", ox * co2)
 }
 
-pub day_4() {
+fn read_input(filename: &str) -> io::Result<(Vec<i32>, Vec<Vec<i32>>)> {
+    let file_in = fs::File::open(filename)?;
+    let mut file_reader = BufReader::new(file_in);
+    let mut line_buf = String::new();
+    let _res = file_reader.read_line(&mut line_buf);
+    let nums: Vec<i32> = line_buf
+        .split(",")
+        .into_iter()
+        .flat_map(|v| v.parse::<i32>())
+        .collect();
+    let arr: Vec<Vec<i32>> = file_reader
+        .lines()
+        .map(|l| {
+            l.unwrap()
+                .split(char::is_whitespace)
+                .flat_map(|number| number.parse::<i32>())
+                .collect()
+        })
+        .collect();
+    return Ok((nums, arr.into_iter().filter(|v| v.len() > 0).collect()));
+}
+
+pub fn day_4() {
     let ticket_dim = 5;
     let mut row_counts = HashMap::new();
     let mut col_counts = HashMap::new();
@@ -162,3 +184,93 @@ pub day_4() {
     println!("{:?}", winners[0]);
     println!("{:?}", winners.last().unwrap());
 }
+
+pub fn day_5() {
+    let file_in = fs::File::open("data/day5.txt").unwrap();
+    let file_reader = BufReader::new(file_in);
+    let res: Vec<Vec<i32>> = file_reader
+        .lines()
+        .map(|l| {
+            l.unwrap()
+                .split(" -> ")
+                .map(|v| {
+                    v.split(",")
+                        .flat_map(|v| v.parse::<i32>())
+                        .collect::<Vec<i32>>()
+                })
+                .flatten()
+                .collect()
+        })
+        .collect();
+    let mut counts = HashMap::new();
+    let _test = res
+        .iter()
+        .map(|v| {
+            let (x1, y1, x2, y2) = (v[0], v[1], v[2], v[3]);
+            if x1 == x2 {
+                let sy = if y1 >= y2 { y2 } else { y1 };
+                let ey = if y1 >= y2 { y1 } else { y2 };
+                for y in sy..=ey {
+                    let count = counts.get(&(x1, y)).cloned().unwrap_or(0);
+                    counts.insert((x1, y), count + 1);
+                }
+            } else if y1 == y2 {
+                let sx = if x1 >= x2 { x2 } else { x1 };
+                let ex = if x1 >= x2 { x1 } else { x2 };
+                for x in sx..=ex {
+                    let count = counts.get(&(x, y1)).cloned().unwrap_or(0);
+                    counts.insert((x, y1), count + 1);
+                }
+            } else {
+                let xdir = if x1 > x2 { -1 } else { 1 };
+                let ydir = if y1 > y2 { -1 } else { 1 };
+                let (mut x, mut y) = (x1, y1);
+                for _ in x1 * xdir..=x2 * xdir {
+                    let count = counts.get(&(x, y)).cloned().unwrap_or(0);
+                    counts.insert((x, y), count + 1);
+                    x += xdir;
+                    y += ydir;
+                }
+            }
+        })
+        .collect::<()>();
+    let mut cross_count = 0;
+    for (key, value) in counts {
+        if value >= 2 {
+            cross_count += 1;
+        }
+    }
+    println!("{:?}", cross_count)
+}
+
+fn day_6() {
+    let mut nums: Vec<i64> = fs::read_to_string("data/day6.txt")
+        .unwrap()
+        .split(",")
+        .into_iter()
+        .flat_map(|v| v.trim().parse::<i64>())
+        .collect();
+    let mut counts = HashMap::new();
+    for num in nums {
+        let &val = counts.get(&num).unwrap_or(&0);
+        counts.insert(num, val + 1 as i64);
+    }
+    for _ in 0..256 {
+        let mut new_counts = HashMap::new();
+        for value in 0..=8 {
+            let &old = counts.get(&value).unwrap_or(&0);
+            let new_val = if value > 0 { value - 1 } else { 6 };
+            if value == 0 {
+                new_counts.insert(8, old);
+            }
+            let &new_count = new_counts.get(&new_val).unwrap_or(&0);
+            new_counts.insert(new_val, new_count + old);
+        }
+        counts = new_counts;
+    }
+
+    let sum = counts.iter().fold(0, |accum, (_, &v)| accum + v);
+    println!("{}", sum);
+}
+
+// I'm naughty and did day 7 in an ipython terminal. Part 1 was the median, part 2 was the mean.
