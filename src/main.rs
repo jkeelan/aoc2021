@@ -43,20 +43,17 @@ fn main() {
     segments.insert(9, "abcdfg");
 
     let file_contents = fs::read_to_string("data/day8.txt").unwrap();
-
-    let nums: Vec<Vec<&str>> = file_contents
+    let contents: Vec<(Vec<&str>, Vec<&str>)> = file_contents
         .split("\n")
         .into_iter()
-        .map(|x| x.split(" | ").into_iter().collect::<Vec<&str>>()[1])
-        .map(|x| x.split(" ").collect::<Vec<&str>>())
+        .map(|x| {
+            let mut split = x.split(" | ");
+            let lhs = split.next().unwrap().split(" ").collect::<Vec<&str>>();
+            let rhs = split.next().unwrap().split(" ").collect::<Vec<&str>>();
+            (lhs, rhs)
+        })
         .collect();
-
-    let maps: Vec<Vec<&str>> = file_contents
-        .split("\n")
-        .into_iter()
-        .map(|x| x.split(" | ").into_iter().collect::<Vec<&str>>()[0])
-        .map(|x| x.split(" ").collect::<Vec<&str>>())
-        .collect();
+    // Calculate baseline signatures
     let mut signatures: HashMap<i32, HashSet<i32>> = HashMap::new();
     for i in [0, 2, 3, 5, 6, 9] {
         let mut temp = HashSet::new();
@@ -67,11 +64,8 @@ fn main() {
         }
         signatures.insert(i, temp);
     }
-
     let mut total_sum = 0;
-    for sol_ind in 0..nums.len() {
-        let line = &maps[sol_ind];
-        let res = &nums[sol_ind];
+    for (line, res) in contents {
         let lens: Vec<i32> = line.iter().map(|v| v.len() as i32).collect();
         let mut line_map = HashMap::new();
         let mut found = Vec::new();
@@ -110,6 +104,8 @@ fn main() {
             }
             these_sigs.insert(i, temp);
         }
+
+        // Compare the signatures with the baseline, and add.
         for (i, sig) in &these_sigs {
             for (j, main_sig) in &signatures {
                 if sig == main_sig {
@@ -118,13 +114,8 @@ fn main() {
                 }
             }
         }
-        for i in 0..line.len() {
-            if !found.contains(&i) {
-                line_map.insert(3, line[i]);
-            }
-        }
 
-        // convert res
+        // convert res and sum
         let mut sum = 0;
         let mut mult = 1000;
         for v in res {
